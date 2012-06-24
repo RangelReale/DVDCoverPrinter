@@ -10,6 +10,33 @@ namespace DVDCoverPrinter
 {
     class CoverPrint : PrintDocument
     {
+        private Color[] outlineColors = {
+            Color.Black,
+            Color.Black,
+            Color.Black,
+            Color.Black,
+        };
+        private Color[] colors = {
+            Color.Red,
+            Color.Yellow,
+            Color.Green,
+            Color.Blue,
+        };
+
+        public String text1 = null;
+        public String text2 = null;
+        public String text3 = null;
+        public String text4 = null;
+        public String textnumber = null;
+
+        public float size1 = 9.0f;
+        public float size2 = 9.0f;
+        public float size3 = 9.0f;
+        public float size4 = 9.0f;
+        public float sizenumber = 9.0f;
+
+        public int numbercolor = 0;
+
         public CoverPrint()
         {
         }
@@ -24,28 +51,21 @@ namespace DVDCoverPrinter
             base.OnPrintPage(ev);
 
             ev.Graphics.PageUnit = GraphicsUnit.Millimeter;
+            Font font; // = new Font(new FontFamily("Arial"), 7.0f, GraphicsUnit.Millimeter);
 
-            string strHello = "Hello Printer!";
-            Font oFont = new Font("Arial", 10);
-            Rectangle marginRect = ev.MarginBounds;
+            Rectangle bodyRect = new Rectangle(3, 3, 184, 272);             // DVD Cover size 272x184
+            Rectangle middleRect = new Rectangle(3, 129 + 3, 184, 14);      // DVD Covert side size, 14x184
 
-            /*
-            ev.Graphics.DrawRectangle(new Pen(System.Drawing.Color.Black), marginRect);
-            ev.Graphics.DrawString(strHello, oFont, new SolidBrush(System.Drawing.Color.Blue),
-              (ev.PageBounds.Right / 2), ev.PageBounds.Bottom / 2);
-            */
-
-            Rectangle bodyRect = new Rectangle(3, 3, 184, 272);
-            Rectangle middleRect = new Rectangle(3, 129 + 3, 184, 14);
-
+            // Draw dotted rectable
             Pen borderPen = new Pen(System.Drawing.Color.Black, 0.3f);
             borderPen.DashStyle = System.Drawing.Drawing2D.DashStyle.Custom;
-            borderPen.DashPattern = new float[] {0.3F, 15F};
+            borderPen.DashPattern = new float[] {0.3F, 45F};
             ev.Graphics.DrawRectangle(borderPen, bodyRect);
 
+            // Draw dotted rectable in middle
+            //ev.Graphics.DrawRectangle(borderPen, middleRect);
 
-            ev.Graphics.DrawRectangle(borderPen, middleRect);
-
+            // Draw small "L" markers on cut positions
             Pen linePen = new Pen(System.Drawing.Color.Black, 0.3f);
             ev.Graphics.DrawLine(linePen, 3, 3, 6, 3);
             ev.Graphics.DrawLine(linePen, 3, 3, 3, 6);
@@ -59,24 +79,56 @@ namespace DVDCoverPrinter
             ev.Graphics.DrawLine(linePen, 184 + 3, 272 + 3, 181+3, 272 + 3);
             ev.Graphics.DrawLine(linePen, 184 + 3, 272 + 3, 184+3, 269 + 3);
 
-            DrawTextOutline(ev, "Nome da novela", 3.0f + 23.0f, 3.0f + 23.0f, false);
-            DrawTextOutline(ev, "Nome da novela", 3.0f + 23.0f, 3.0f + 23.0f);
-
-            /*
-            ev.Graphics.DrawString(strHello, oFont, new SolidBrush(System.Drawing.Color.Blue),
-              (ev.PageBounds.Right / 2), ev.PageBounds.Bottom / 2);
-             */
+            float startpos = middleRect.X + 2.0f;
+            if (text1 != null)
+            {
+                font = new Font(new FontFamily("Arial"), size1, GraphicsUnit.Millimeter);
+                startpos += DrawSideText(ev, font, 0, text1, startpos, middleRect.Y + ((middleRect.Height-size1) / 2.0f));
+            }
+            if (text2 != null)
+            {
+                font = new Font(new FontFamily("Arial"), size2, GraphicsUnit.Millimeter);
+                startpos += DrawSideText(ev, font, 1, text2, startpos, middleRect.Y + ((middleRect.Height - size2) / 2.0f));
+            }
+            if (text3 != null)
+            {
+                font = new Font(new FontFamily("Arial"), size3, GraphicsUnit.Millimeter);
+                startpos += DrawSideText(ev, font, 2, text3, startpos, middleRect.Y + ((middleRect.Height - size3) / 2.0f));
+            }
+            if (text4 != null)
+            {
+                font = new Font(new FontFamily("Arial"), size4, GraphicsUnit.Millimeter);
+                startpos += DrawSideText(ev, font, 3, text4, startpos, middleRect.Y + ((middleRect.Height - size4) / 2.0f));
+            }
+            if (textnumber != null)
+            {
+                font = new Font(new FontFamily("Arial"), sizenumber, GraphicsUnit.Millimeter);
+                startpos += DrawNumberText(ev, font, numbercolor, textnumber, middleRect.X + middleRect.Width - 2.0f, middleRect.Y + ((middleRect.Height - sizenumber) / 2.0f));
+            }
         }
 
-        private void DrawTextOutline(PrintPageEventArgs ev, String text, float x, float y, Boolean rotate = true)
+        private float DrawSideText(PrintPageEventArgs ev, Font font, int color, String text, float x, float y)
+        {
+            SizeF textsize = ev.Graphics.MeasureString(text, font);
+            DrawTextOutline(ev, font, color, text, x, y);
+            return textsize.Width;
+        }
+
+        private float DrawNumberText(PrintPageEventArgs ev, Font font, int color, String text, float x, float y)
+        {
+            SizeF textsize = ev.Graphics.MeasureString(text, font);
+            DrawTextOutline(ev, font, color, text, x - textsize.Width, y);
+            return textsize.Width;
+        }
+
+        private void DrawTextOutline(PrintPageEventArgs ev, Font font, int color, String text, float x, float y, Boolean rotate = false)
         {
             ev.Graphics.SmoothingMode = SmoothingMode.AntiAlias;
             ev.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
 
-            Font font = new Font(new FontFamily("Arial"), 7.0f, GraphicsUnit.Millimeter);
+            //Font font = new Font(new FontFamily("Arial"), 7.0f, GraphicsUnit.Millimeter);
 
             SizeF textsize = ev.Graphics.MeasureString(text, font);
-            Console.WriteLine(textsize);
 
             if (rotate)
             {
@@ -102,24 +154,15 @@ namespace DVDCoverPrinter
 
             System.Drawing.Drawing2D.GraphicsPath path = new System.Drawing.Drawing2D.GraphicsPath();
 
-            if (true)
-            {
-                path.AddString(text, font.FontFamily, 0, font.Size,
-                    new RectangleF(x, y, textsize.Width, textsize.Height),
-                    sf);
-            }
-            else
-            {
-                path.AddString(text, font.FontFamily, 0, font.Size,
-                    new RectangleF(x - (textsize.Width / 2), y - (textsize.Height / 2), textsize.Width, textsize.Height),
-                    sf);
-            }
+            path.AddString(text, font.FontFamily, 0, font.Size,
+                new RectangleF(x, y, textsize.Width, textsize.Height),
+                sf);
 
             // fill in the outline
-            ev.Graphics.FillPath(Brushes.Yellow, path);
+            ev.Graphics.FillPath(new SolidBrush(colors[color]), path);
 
             // draw the outline
-            ev.Graphics.DrawPath(new Pen(Color.Green, 0.5f), path);
+            ev.Graphics.DrawPath(new Pen(outlineColors[color], 0.1f), path);
 
             if (rotate)
             {
